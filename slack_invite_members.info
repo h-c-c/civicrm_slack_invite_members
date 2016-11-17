@@ -1,0 +1,6 @@
+name = Slack Invite Members
+description = Auto-invites new memebrs to your slack channels. *You must edit source code for this to work*  
+dependencies[] = civicrm
+package = CiviCRM
+core = 7.x
+version = 1.0

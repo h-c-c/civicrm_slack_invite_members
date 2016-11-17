@@ -1,0 +1,68 @@
+<?php  
+//  You need to add 1) your Slack testing api key and 2) the internal ids 
+//  for the channels you want to invite to.  hint: Inspect the webpage
+//  as you invite a user to your channels.  3) Also, add your subdomain 
+//  for your org.
+// TODO: Turn this in to a friendly CiviCRM extension. 
+
+function slack_invite_members_civicrm_post( $op, $objectName, $objectId, &$objectRef ) {     
+
+if ($objectName == 'Membership' &&  $op == 'create') {         
+
+$memberdata = civicrm_api3('Membership', 'get', array(
+  'sequential' => 1,
+  'return' => "contact_id",
+  'id' => $objectId,
+));
+
+if (!empty($memberdata['values'][0]['contact_id'])) {
+          $contact_id = $memberdata['values'][0]['contact_id'];
+} else {
+            exit();
+        }
+
+
+$contactdata = civicrm_api3('Contact', 'get', array(
+  'sequential' => 1,
+  'return' => "first_name,email",
+  'id' => $contact_id,
+));
+
+if ((!empty($contactdata['values'][0]['first_name'])) && (!empty($contactdata['values'][0]['email'])) ) {
+          $first_name = $contactdata['values'][0]['first_name'];
+          $email = $contactdata['values'][0]['email'];
+          
+} else {
+            exit();
+        }
+
+$data = array(
+    "email" => urlencode($email),
+    "channels" => urlencode("ADD,ALL,YOUR,CHANNELS,COMMA,SEPERATED"),
+    "first_name" => urlencode($first_name),
+    "token" => "YOUR-API-KEY-GOES-HERE",
+    "set_active" => urlencode('true'),
+    "_attempts" => "1"
+    );
+
+$data_string = json_encode($data);
+$fields_string='';
+foreach($data as $key=>$value) { $fields_string .= $key.'='.$value.'&'; }
+rtrim($fields_string, '&');
+    // open connection
+                $ch = curl_init();
+
+            // set the url, number of POST vars, POST data
+                curl_setopt($ch,CURLOPT_URL, 'https://ADD-YOUR-SUBDOMAIN.slack.com/api/users.admin.invite?t='.time());
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch,CURLOPT_POST, count($data));
+                curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+
+            // exec
+                $replyRaw = curl_exec($ch);
+                $reply=json_decode($replyRaw,true);
+
+curl_close($ch);
+
+}
+} 
